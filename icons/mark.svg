@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- SKRAPERS / ALGO// glyph mark. Geometric monoline "A" in black,
+       two parallel forward-slash strokes in ALGO// blue. Stroke-drawn
+       (not filled), rounded joins/caps, so it stays crisp and friendly
+       at both favicon and app-icon sizes. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- A -->
+    <path d="M31 14 L8 86" stroke="#111111" stroke-width="10"/>
+    <path d="M31 14 L54 86" stroke="#111111" stroke-width="10"/>
+    <path d="M16.9 58 L45.1 58" stroke="#111111" stroke-width="10"/>
+    <!-- // -->
+    <path d="M60 86 L76 14" stroke="#1D9BF0" stroke-width="10"/>
+    <path d="M78 86 L94 14" stroke="#1D9BF0" stroke-width="10"/>
+  </g>
+</svg>
