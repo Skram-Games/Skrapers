@@ -1,0 +1,16 @@
+{
+  "name": "SKRAPERS — A M.A.I. Detective prototype",
+  "short_name": "SKRAPERS",
+  "description": "Investigate a simulated social network to tell real accounts from AI-generated Skrapers.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1D9BF0",
+  "icons": [
+    { "src": "icons/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/pwa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/pwa-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
