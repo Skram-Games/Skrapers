@@ -1,0 +1,32 @@
+/* SKRAPERS — Stage 1 visual language
+   Palette and type per the design doc's section 35/36:
+   Deep Midnight Navy / Electric Blue / Soft White, Inter + Space Grotesk,
+   aiming for "premium, modern, believable, slightly clinical" — not horror. */
+
+:root {
+  --navy: #FFFFFF;
+  --black: #F0F2F4;
+  --blue: #1D9BF0;
+  --white: #0F1419;
+  --grey: #536471;
+  --amber: #B8752B;
+  --red: #F4212E;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--black);
+  color: var(--white);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  
