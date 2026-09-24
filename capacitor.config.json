@@ -1,0 +1,12 @@
+{
+  "appId": "com.skrapers.mai",
+  "appName": "SKRAPERS",
+  "webDir": "www",
+  "backgroundColor": "#FFFFFF",
+  "android": {
+    "backgroundColor": "#FFFFFF"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

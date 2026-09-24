@@ -1,0 +1,21 @@
+{
+  "name": "skrapers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SKRAPERS prototype — vanilla HTML/CSS/JS game logic in the repo root, wrapped as an Android app via Capacitor. See ANDROID.md.",
+  "scripts": {
+    "build": "node scripts/build-standalone.js",
+    "android:add": "cap add android",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:assets": "capacitor-assets generate --android --iconBackgroundColor \"#FFFFFF\" --iconBackgroundColorDark \"#FFFFFF\" --icon brand/icons/icon-master-1024.png --iconForeground brand/icons/android-adaptive-foreground-1024.png"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/assets": "^3.0.0"
+  }
+}
