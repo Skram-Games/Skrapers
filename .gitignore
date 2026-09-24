@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Capacitor-generated native projects (regenerate with `npx cap add android`)
+android/
+ios/
+
+# Build/OS noise
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+
+# Local env / secrets (keystores, signing configs — never commit these)
+*.keystore
+*.jks
+local.properties
