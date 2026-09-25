@@ -161,7 +161,16 @@ const CASES = [
       "Expect a mix of everything: a mechanical-cadence tell, a quiet amplification cluster, and at least one account whose real tell is in who it follows.",
       "Don't try to be exhaustive — work the strongest signal first, confirm with a second, then flag.",
       "ALGO// will have already flagged one account in this file before you open it. That's the platform's judgment, not evidence — check its work, and if it's wrong, say so from that account's profile.",
+      "The Marketplace is part of this network too. A seller is an account like any other — read the listing, then investigate who's selling it.",
     ],
+    // Stage 32 (#7): the optional Marketplace hook — see marketplaceHookFor
+    // below. ws1 is this roster's adbot (a real Skraper, and deliberately
+    // NOT the account ALGO//'s pre-flag lands on in this file, ws2), so the
+    // pointer is a genuine lead rather than a second copy of the pre-flag.
+    marketplace: {
+      sellerId: "SKR-CASE007-ALGO-ws1",
+      briefing: "ALGO// flagged unusual activity around a seller in the Marketplace this week — worth a look.",
+    },
     build: () => window.SKRAPERS_WORLDGEN.generateWorld("SKR-CASE007-ALGO", 50, 30).accounts,
   },
 ];
@@ -677,6 +686,23 @@ function secondOpinionsFor(caseId, accounts) {
   return out;
 }
 
-window.SKRAPERS_CASES = { CASES, getCase, isGeneratedCaseId, nextCaseId, GENERATED_CASE_START, CASE_SHAPES, shapeForCaseNumber, hintShapeFor, caseHint, MAX_HINTS_PER_ATTEMPT, secondOpinionsFor, RIVAL_ACCURACY, PREFLAG_ACCURACY };
+// ===========================================================================
+// Stage 32 (#7): MARKETPLACE HOOKS. A case definition may carry an optional
+//   marketplace: { sellerId, briefing }
+// — `sellerId` an account id in that case's own roster, `briefing` one line
+// pointing the player at the Marketplace (shown on the case brief and on
+// Case Load, never naming the seller). While that case is the live world,
+// its Marketplace (game/marketplace.js) guarantees one sponsored, suspicious
+// listing from that seller, near the top of the grid, that doesn't sell out
+// from under the player until the case is cleared. Anything without the
+// field is untouched. Not a new case shape (that's future scope) — just
+// enough for a case to send the player shopping for evidence.
+// ===========================================================================
+function marketplaceHookFor(caseId) {
+  const def = getCase(caseId);
+  return def && def.id === caseId && def.marketplace && def.marketplace.sellerId ? def.marketplace : null;
+}
+
+window.SKRAPERS_CASES = { marketplaceHookFor, CASES, getCase, isGeneratedCaseId, nextCaseId, GENERATED_CASE_START, CASE_SHAPES, shapeForCaseNumber, hintShapeFor, caseHint, MAX_HINTS_PER_ATTEMPT, secondOpinionsFor, RIVAL_ACCURACY, PREFLAG_ACCURACY };
 
 })();
