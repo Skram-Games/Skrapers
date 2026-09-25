@@ -170,7 +170,33 @@ const state = {
   // playthrough, so a "Log out" factory reset doesn't make someone who has
   // already learned the game sit through the walkthrough again (see
   // ui/feed.js's resetSession, which carries it across like settings).
-  tutorial: { seen: {}, skipped: false },
+  //
+  // Stage 33 (Spotlight Tutorials): the same record now also carries
+  //   tours    { main, case001, market } — whether each spotlight tour has
+  //            been seen through (finished or skipped). `main` is the opening
+  //            interface tour, `market` replaces the old five-tip Marketplace
+  //            guide, and `case001` is a summary flag the Case 001 walkthrough
+  //            sets once every one of its beats (still tracked individually in
+  //            `seen`, exactly as before) is retired or the walkthrough is
+  //            skipped. A Settings replay never writes any of these.
+  //   moments  { sponsored, freeFee } — the Marketplace's one-off call-outs,
+  //            each false until that moment has happened once (then the time
+  //            it did). Independent of each other and of the tours.
+  // Same lifetime as `seen`/`skipped`: kept across a Log out.
+  tutorial: { seen: {}, skipped: false, tours: { main: false, case001: false, market: false }, moments: { sponsored: false, freeFee: false } },
+  // Stage 32 (Marketplace): every world's generated listings and the
+  // player's "Is this still available?" messages — the full shape, and the
+  // rules for refreshing and churning it, live in game/marketplace.js's
+  // header. In brief: marketplace.worlds[worldKey] carries that world's 100
+  // listings plus `lastRefreshAt` (the whole set rebuilds once 24 real
+  // hours have passed since it — the player only ever sees "This week") and
+  // `lastVisitAt` (when the player last arrived on the grid — listings only
+  // sell and get replaced on a RETURN visit, never mid-look);
+  // marketplace.messages holds each sent message with the `respondAt` time
+  // its reply is due. Player progress, so a genuine "New investigation"
+  // (resetState) clears it; a normal world switch doesn't, since each world
+  // keeps its own market under its own key.
+  marketplace: { worlds: {}, messages: [] },
 };
 
 // Round 30 (#1): tip bookkeeping. A retired tip never comes back.
@@ -185,9 +211,77 @@ function retireTutorialTip(id, how) {
   return true;
 }
 
+// Stage 32 (#8): the Marketplace's first-visit guide shares the walkthrough's
+// record (tutorial.seen, retired with retireTutorialTip) but NOT its "skip"
+// switch — skipping the Case 001 walkthrough says nothing about whether a
+// player has seen a feature that didn't exist yet.
+function isGuideTipSeen(id) {
+  return !!(state.tutorial && state.tutorial.seen && state.tutorial.seen[id]);
+}
+
 function skipTutorial() {
   state.tutorial = state.tutorial || { seen: {}, skipped: false };
   state.tutorial.skipped = true;
+}
+
+// Stage 33: the spotlight tours' and Marketplace moments' flags (see the
+// `tutorial` comment above). Every accessor tolerates a record from an older
+// save that has neither sub-object yet.
+const TOUR_IDS = ["main", "case001", "market"];
+const MOMENT_IDS = ["sponsored", "freeFee"];
+
+function ensureTutorialRecord() {
+  const t = state.tutorial && typeof state.tutorial === "object" ? state.tutorial : (state.tutorial = { seen: {}, skipped: false });
+  if (!t.seen || typeof t.seen !== "object") t.seen = {};
+  t.skipped = !!t.skipped;
+  if (!t.tours || typeof t.tours !== "object") t.tours = {};
+  if (!t.moments || typeof t.moments !== "object") t.moments = {};
+  TOUR_IDS.forEach((id) => (t.tours[id] = !!t.tours[id]));
+  MOMENT_IDS.forEach((id) => (t.moments[id] = t.moments[id] || false));
+  return t;
+}
+
+function isTourSeen(id) {
+  return !!(state.tutorial && state.tutorial.tours && state.tutorial.tours[id]);
+}
+
+function markTourSeen(id) {
+  const t = ensureTutorialRecord();
+  if (t.tours[id]) return false;
+  t.tours[id] = true;
+  return true;
+}
+
+function isMomentSeen(id) {
+  return !!(state.tutorial && state.tutorial.moments && state.tutorial.moments[id]);
+}
+
+function markMomentSeen(id) {
+  const t = ensureTutorialRecord();
+  if (t.moments[id]) return false;
+  t.moments[id] = Date.now();
+  return true;
+}
+
+// Rebuilds a saved `tutorial` record into the current shape. A save from
+// before Stage 33 has no `tours`: its player is already past onboarding, so
+// the opening tour counts as seen (they can replay it from Settings); the
+// Marketplace tour counts as seen only if they had finished (or skipped) the
+// old five-tip guide it replaces (`marketGuideIds`); the Case 001 walkthrough
+// keeps its per-beat record untouched and its summary flag is re-derived by
+// the caller, which knows the beats.
+function normalizeTutorial(saved, marketGuideIds) {
+  const src = saved && typeof saved === "object" ? saved : {};
+  const legacy = !src.tours || typeof src.tours !== "object";
+  const seen = src.seen && typeof src.seen === "object" ? { ...src.seen } : {};
+  const tours = legacy ? {} : { ...src.tours };
+  const moments = src.moments && typeof src.moments === "object" ? { ...src.moments } : {};
+  if (legacy) {
+    tours.main = true; // only ever called while restoring a save, i.e. for a player who has already been through onboarding
+    tours.market = (marketGuideIds || []).length > 0 && marketGuideIds.every((id) => !!seen[id]);
+  }
+  state.tutorial = { seen, skipped: !!src.skipped, tours, moments };
+  return ensureTutorialRecord();
 }
 
 // Round 30 (#3): per-world case-attempt actions the nudge reads.
@@ -217,13 +311,22 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// Stage 31 (#12): the standing swing of one formal flag. A wrongful flag
+// used to cost -10 — five of those and a player's standing was half gone
+// from ordinary learning mistakes. Rescaled so one honest mistake costs -2.
+// The case-failure limit (wrongFlagLimitFor/wrongfulFlagCount below) counts
+// RAW wrongful flags, never these points, so it is untouched by this: a case
+// is still pulled after exactly as many mistakes as before.
+const CORRECT_FLAG_STANDING = 4;
+const WRONG_FLAG_STANDING = -2;
+
 // Returns { correct, delta, message } and mutates state.
 function flagAccount(acct) {
   if (state.flagged[acct.id]) {
     return { alreadyFlagged: true, correct: state.flagged[acct.id].correct };
   }
   const correct = !!acct.isSkraper;
-  const delta = correct ? 4 : -10;
+  const delta = correct ? CORRECT_FLAG_STANDING : WRONG_FLAG_STANDING;
   state.credibility = clamp(state.credibility + delta, 0, 100);
   state.flagged[acct.id] = { correct, at: Date.now() };
   // Round 27: guarded against duplicates — a failed case's retry (see
@@ -628,6 +731,7 @@ function resetState() {
   state.caseHints = [];
   state.caseRecords = {};
   state.secondOpinionHistory = [];
+  state.marketplace = { worlds: {}, messages: [] };
   loadWorldExtras(null);
 }
 
@@ -659,6 +763,8 @@ const api = {
   wrongFlagLimitFor,
   FIRST_CASE_ID,
   FIRST_CASE_EXTRA_STRIKES,
+  CORRECT_FLAG_STANDING,
+  WRONG_FLAG_STANDING,
   wrongfulFlagCount,
   recordCaseFailure,
   caseFailureCount,
@@ -683,8 +789,16 @@ const api = {
   sendMessage,
   toggleSetting,
   isTutorialTipSeen,
+  isGuideTipSeen,
   retireTutorialTip,
   skipTutorial,
+  TOUR_IDS,
+  MOMENT_IDS,
+  isTourSeen,
+  markTourSeen,
+  isMomentSeen,
+  markMomentSeen,
+  normalizeTutorial,
   recordCaseAction,
   caseActionCount,
   dismissCaseNudge,
