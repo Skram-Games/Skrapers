@@ -105,6 +105,42 @@ function focusNudgeText({ handle, kind, pairHandle }, pick) {
 }
 
 // ===========================================================================
+// Stage 33: the Marketplace's own persistent line — Home's focus nudge, in
+// the same voice, but general rather than aimed: the Marketplace has no one
+// "account to look at", so it rotates through standing Skraper-spotting
+// reminders instead (ui/feed.js's renderMarketNudge picks the next one on
+// every arrival on the grid). It never points at a listing or seller, so it
+// can't give anything away — and it keeps running long after the one-time
+// Marketplace tour is done.
+// ===========================================================================
+const MARKET_SPOTTING_LINES = [
+  "Read the title, then look at the picture. They should be the same thing. Scroll fast enough and you'll stop checking.",
+  "A price that's too good is bait. One that's oddly exact — pennies on a second-hand toaster — was set by something that doesn't haggle.",
+  "FREE isn't free if there's a fee underneath it. The small print under the price is where that lives.",
+  "Every seller is an account. A join date from last month and nothing else posted is a shop front, not a neighbour.",
+  "Sponsored means paid to be seen. That's not a verdict. It's a reason to look twice.",
+  "Nobody here needs you to buy anything. Ask whether it's still available, and read how they answer.",
+  "One odd listing is just an odd listing. The same seller being odd three times is a pattern.",
+];
+
+function marketSpottingText(seq) {
+  const n = MARKET_SPOTTING_LINES.length;
+  return MARKET_SPOTTING_LINES[(((seq || 0) % n) + n) % n];
+}
+
+// Stage 33: the Marketplace's one-off call-outs — the first time a listing
+// of a given kind actually scrolls into the player's view. Each fires once,
+// ever (game/state.js's tutorial.moments), as an ordinary toast.
+const MARKET_MOMENT_LINES = {
+  sponsored: "ALGO//: That's your first Sponsored listing. Someone paid for you to see it. Worth asking who — tap through to the seller.",
+  freeFee: "ALGO//: FREE, with a fee underneath. Real neighbours giving something away don't usually charge for it.",
+};
+
+function marketMomentText(id) {
+  return MARKET_MOMENT_LINES[id] || "";
+}
+
+// ===========================================================================
 // Round 29 (#6): ALGO// PRE-FLAGS — the platform calling one of its own
 // accounts suspicious, unprompted, before the player has investigated it.
 // Which account, and whether ALGO// is right, is planned per case in
@@ -160,9 +196,9 @@ function load(saved) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { checkTriggers, focusNudgeText, preflagText, preflagOutcomeText, reset, markRead, dump, load, state };
+  module.exports = { checkTriggers, focusNudgeText, marketSpottingText, MARKET_SPOTTING_LINES, marketMomentText, preflagText, preflagOutcomeText, reset, markRead, dump, load, state };
 } else {
-  window.SKRAPERS_ALGOMSGS = { checkTriggers, focusNudgeText, preflagText, preflagOutcomeText, reset, markRead, dump, load, state };
+  window.SKRAPERS_ALGOMSGS = { checkTriggers, focusNudgeText, marketSpottingText, MARKET_SPOTTING_LINES, marketMomentText, preflagText, preflagOutcomeText, reset, markRead, dump, load, state };
 }
 
 })();
